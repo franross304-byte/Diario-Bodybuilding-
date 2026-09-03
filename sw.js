@@ -1,11 +1,11 @@
-const CACHE = 'diario-bodybuilding-v1';
+const CACHE = 'diario-bodybuilding-v2';
 
 const FILES = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './icon-192.png',
-  './icon-512.png'
+  './icon-192.png.JPG',
+  './icon-512.png.JPG'
 ];
 
 self.addEventListener('install', event => {
