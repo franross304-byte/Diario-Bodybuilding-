@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1688cb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bodybuilding">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Diario Bodybuilding</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0b0f14;color:#f5f7fa;font-family:system-ui,-apple-system,sans-serif}
+.app{max-width:900px;margin:auto;padding:18px 14px 90px}
+h1{margin:0;font-size:24px}
+small,.muted{color:#97a5b4}
+.nav{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;position:sticky;top:0;background:#0b0f14;padding:10px 0;z-index:5}
+button{border:0;border-radius:11px;min-height:44px;background:#1a2632;color:white;font-weight:700;padding:8px}
+.nav button{font-size:11px}
+.nav .on,.primary{background:#1688cb}
+.card{background:#131b24;border:1px solid #263543;border-radius:15px;padding:14px;margin:11px 0}
+.hide{display:none}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.metric{background:#1a2632;border-radius:11px;padding:11px}
+.metric b{display:block;font-size:20px}
+.metric span{font-size:11px;color:#97a5b4}
+label{display:block;color:#97a5b4;font-size:12px;margin:7px 0 4px}
+input,select,textarea{width:100%;min-height:44px;background:#0e151c;color:white;border:1px solid #2b3a48;border-radius:9px;padding:9px;font-size:16px}
+textarea{min-height:70px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.grow{flex:1;min-width:130px}
+.exercise{background:#192530;border-radius:12px;padding:12px;margin:9px 0}
+.set{display:grid;grid-template-columns:28px 1fr 1fr 1fr;gap:6px;align-items:end}
+.timer{font-size:32px;font-weight:800}
+.chart{height:150px;background:#0e151c;border-radius:10px;padding:10px}
+.chart svg{width:100%;height:100%}
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.photos img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px}
+.item{padding:10px 0;border-bottom:1px solid #263543}
+@media(max-width:600px){.grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<h1>Diario Bodybuilding</h1>
+<div class="muted">Allenamenti · progressi · misure · foto</div>
+
+<nav class="nav">
+<button class="on" data-p="home">Home</button>
+<button data-p="train">Allenamento</button>
+<button data-p="prog">Progressi</button>
+<button data-p="body">Corpo</button>
+<button data-p="arc">Archivio</button>
+</nav>
+
+<section id="home">
+<div class="grid">
+<div class="metric"><b id="wn">0</b><span>Settimana</span></div>
+<div class="metric"><b id="mn">0</b><span>Mese</span></div>
+<div class="metric"><b id="vol">0</b><span>Volume kg</span></div>
+<div class="metric"><b id="exn">0</b><span>Esercizi</span></div>
+</div>
+
+<div class="card">
+<b>Nuovo allenamento</b>
+<p class="muted">Nessuna scheda preimpostata. Inserisci liberamente gli esercizi indicati dal tuo preparatore.</p>
+<button class="primary" id="go">INIZIA ALLENAMENTO</button>
+</div>
+
+<div class="card">
+<b>Ultima seduta</b>
+<div id="last" class="muted">Nessuna.</div>
+</div>
+</section>
+
+<section id="train" class="hide">
+<div class="card">
+<div class="row">
+<div class="grow"><label>Data</label><input type="date" id="date"></div>
+<div class="grow"><label>Nome seduta</label><input id="session" placeholder="Es. Allenamento A"></div>
+</div>
+
+<div id="elist"></div>
+
+<div class="row">
+<button id="addex">+ Esercizio</button>
+<button class="primary" id="savew">SALVA SEDUTA</button>
+</div>
+</div>
+
+<div class="card">
+<b>Timer recupero</b>
+<div class="timer" id="timer">02:00</div>
+<div class="row">
+<select id="rest" style="max-width:140px">
+<option value="60">1:00</option>
+<option value="90">1:30</option>
+<option value="120" selected>2:00</option>
+<option value="180">3:00</option>
+<option value="240">4:00</option>
+</select>
+<button id="start">Avvia</button>
+<button id="reset">Reset</button>
+</div>
+</div>
+</section>
+
+<section id="prog" class="hide">
+<div class="card">
+<b>Progressi esercizio</b>
+<label>Esercizio</label>
+<select id="sel"><option value="">Seleziona...</option></select>
+<div id="stats" class="muted" style="margin:10px 0"></div>
+<div class="chart" id="chart"></div>
+</div>
+</section>
+
+<section id="body" class="hide">
+<div class="card">
+<b>Nuova misurazione</b>
+
+<div class="row">
+<div class="grow"><label>Data</label><input type="date" id="bdate"></div>
+<div class="grow"><label>Peso kg</label><input type="number" step=".1" id="weight"></div>
+</div>
+
+<div id="measures" class="grid"></div>
+
+<label>Foto progressi</label>
+<input type="file" accept="image/*" multiple id="pics">
+
+<label>Note</label>
+<textarea id="notes" placeholder="Condizione, alimentazione, impressioni..."></textarea>
+
+<button class="primary" id="saveb" style="margin-top:10px">SALVA MISURE</button>
+</div>
+
+<div class="card">
+<b>Andamento corpo</b>
+<label>Misura da visualizzare</label>
+<select id="msel"></select>
+<div id="bstats" class="muted" style="margin:10px 0"></div>
+<div class="chart" id="bchart"></div>
+</div>
+
+<div class="card">
+<b>Storico corpo</b>
+<div id="bhist"></div>
+</div>
+</section>
+
+<section id="arc" class="hide">
+<div class="card">
+<b>Archivio allenamenti</b>
+<div id="alist"></div>
+</div>
+
+<div class="card">
+<b>Backup</b>
+<p class="muted">Esporta periodicamente i tuoi dati.</p>
+<button id="export">Esporta backup</button>
+</div>
+</section>
+
+</div>
+
+<script>
+(()=>{
+const K='bbdiary_v1';
+let D={w:[],b:[]};
+try{D=JSON.parse(localStorage.getItem(K))||D}catch(e){}
+
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+const save=()=>localStorage.setItem(K,JSON.stringify(D));
+
+const today=()=>{
+let d=new Date();
+return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+};
+
+$('#date').value=today();
+$('#bdate').value=today();
+
+const M={
+collo:'Collo',
+spalle:'Spalle',
+torace:'Torace',
+vita:'Vita',
+addome:'Addome',
+fianchi:'Fianchi',
+bdx:'Braccio DX',
+bsx:'Braccio SX',
+avam:'Avambraccio',
+cdx:'Coscia DX',
+csx:'Coscia SX',
+pdx:'Polpaccio DX',
+psx:'Polpaccio SX',
+bf:'Grasso %'
+};
+
+$('#measures').innerHTML=Object.entries(M).map(([k,v])=>
+`<div><label>${v}${k==='bf'?'':' cm'}</label><input type="number" step=".1" data-m="${k}"></div>`
+).join('');
+
+$('#msel').innerHTML='<option value="weight">Peso kg</option>'+
+Object.entries(M).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+
+function page(p){
+['home','train','prog','body','arc'].forEach(x=>$('#'+x).classList.toggle('hide',x!==p));
+$$('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
+render();
+}
+
+$$('.nav button').forEach(b=>b.onclick=()=>page(b.dataset.p));
+$('#go').onclick=()=>page('train');
+
+function addEx(){
+let e=document.createElement('div');
+e.className='exercise';
+e.innerHTML=`
+<label>Nome esercizio</label>
+<input class="ename" placeholder="Scrivi esercizio">
+
+<label>Note tecniche</label>
+<input class="enote" placeholder="Facoltative">
+
+<div class="sets"></div>
+
+<div class="row" style="margin-top:8px">
+<button class="aset">+ Serie</button>
+<button class="del">Rimuovi esercizio</button>
+</div>`;
+
+$('#elist').appendChild(e);
+e.querySelector('.aset').onclick=()=>addSet(e.querySelector('.sets'));
+e.querySelector('.del').onclick=()=>e.remove();
+addSet(e.querySelector('.sets'));
+}
+
+function addSet(t){
+let n=t.children.length+1;
+let d=document.createElement('div');
+d.className='set';
+d.innerHTML=`
+<b>${n}</b>
+<div><label>kg</label><input type="number" step=".25" class="kg"></div>
+<div><label>reps</label><input type="number" class="rp"></div>
+<div><label>RIR</label><input type="number" class="rir"></div>`;
+t.appendChild(d);
+}
+
+$('#addex').onclick=addEx;
+addEx();
+
+$('#savew').onclick=()=>{
+let es=$$('.exercise').map(e=>({
+n:e.querySelector('.ename').value.trim(),
+note:e.querySelector('.enote').value,
+s:[...e.querySelectorAll('.set')].map(s=>({
+kg:+s.querySelector('.kg').value||0,
+r:+s.querySelector('.rp').value||0,
+rir:s.querySelector('.rir').value===''?null:+s.querySelector('.rir').value
+})).filter(s=>s.kg||s.r)
+})).filter(e=>e.n&&e.s.length);
+
+if(!es.length){
+alert('Inserisci almeno un esercizio e una serie.');
+return;
+}
+
+D.w.push({
+id:Date.now(),
+date:$('#date').value,
+name:$('#session').value,
+es
+});
+
+save();
+$('#elist').innerHTML='';
+$('#session').value='';
+addEx();
+page('arc');
+};
+
+let ti,rem=120;
+
+function pt(){
+$('#timer').textContent=Math.floor(rem/60)+':'+String(rem%60).padStart(2,'0');
+}
+
+$('#start').onclick=()=>{
+clearInterval(ti);
+rem=+$('#rest').value;
+pt();
+ti=setInterval(()=>{
+rem--;
+if(rem<=0){
+rem=0;
+clearInterval(ti);
+}
+pt();
+},1000);
+};
+
+$('#reset').onclick=()=>{
+clearInterval(ti);
+rem=+$('#rest').value;
+pt();
+};
+
+function volume(w){
+return w.es.reduce((a,e)=>a+e.s.reduce((b,s)=>b+s.kg*s.r,0),0);
+}
+
+function chart(el,p){
+if(!p.length){
+el.innerHTML='<span class="muted">Nessun dato</span>';
+return;
+}
+
+let W=500,H=130;
+let mn=Math.min(...p.map(x=>x.v));
+let mx=Math.max(...p.map(x=>x.v));
+let rg=mx-mn||1;
+
+let q=p.map((x,i)=>[
+20+(W-40)*(p.length===1?.5:i/(p.length-1)),
+H-20-(H-40)*(x.v-mn)/rg
+]);
+
+el.innerHTML=`
+<svg viewBox="0 0 ${W} ${H}">
+<polyline fill="none" stroke="#1688cb" stroke-width="4"
+points="${q.map(x=>x.join(',')).join(' ')}"/>
+${q.map(x=>`<circle cx="${x[0]}" cy="${x[1]}" r="5" fill="white"/>`).join('')}
+</svg>`;
+}
+
+function f2d(f){
+return new Promise(r=>{
+let x=new FileReader();
+x.onload=()=>r(x.result);
+x.readAsDataURL(f);
+});
+}
+
+$('#saveb').onclick=async()=>{
+let b={
+id:Date.now(),
+date:$('#bdate').value,
+weight:+$('#weight').value||null,
+m:{},
+pics:[],
+notes:$('#notes').value
+};
+
+$$('[data-m]').forEach(x=>{
+if(x.value)b.m[x.dataset.m]=+x.value;
+});
+
+for(let f of [...$('#pics').files].slice(0,6)){
+b.pics.push(await f2d(f));
+}
+
+D.b.push(b);
+save();
+
+$('#weight').value='';
+$('#notes').value='';
+$$('[data-m]').forEach(x=>x.value='');
+$('#pics').value='';
+
+render();
+alert('Misure salvate.');
+};
+
+function render(){
+let now=new Date();
+let st=new Date(now);
+st.setDate(now.getDate()-((now.getDay()+6)%7));
+st.setHours(0,0,0,0);
+
+$('#wn').textContent=D.w.filter(w=>new Date(w.date+'T00:00:00')>=st).length;
+$('#mn').textContent=D.w.filter(w=>w.date.slice(0,7)===today().slice(0,7)).length;
+$('#vol').textContent=Math.round(D.w.reduce((a,w)=>a+volume(w),0)).toLocaleString('it-IT');
+
+let names=[...new Set(D.w.flatMap(w=>w.es.map(e=>e.n)))].sort();
+$('#exn').textContent=names.length;
+
+let lw=D.w.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];
+$('#last').innerHTML=lw
+?`<b>${lw.date.split('-').reverse().join('/')}</b> · ${lw.name||'Allenamento'} · ${Math.round(volume(lw)).toLocaleString('it-IT')} kg`
+:'Nessuna.';
+
+let old=$('#sel').value;
+$('#sel').innerHTML='<option value="">Seleziona...</option>'+names.map(n=>`<option>${n}</option>`).join('');
+if(names.includes(old))$('#sel').value=old;
+
+$('#alist').innerHTML=D.w.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(w=>`
+<div class="item">
+<b>${w.date.split('-').reverse().join('/')} ${w.name||''}</b><br>
+<span class="muted">
+${w.es.map(e=>e.n+': '+e.s.map(s=>s.kg+'×'+s.r+(s.rir!==null?' RIR '+s.rir:'')).join(', ')).join('<br>')}
+<br>Volume: ${Math.round(volume(w)).toLocaleString('it-IT')} kg
+</span>
+</div>`).join('')||'<span class="muted">Nessun allenamento.</span>';
+
+renderBody();
+}
+
+$('#sel').onchange=()=>{
+let n=$('#sel').value;
+let p=[];
+let sessions=0;
+let bestSet=null;
+
+D.w.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(w=>{
+w.es.filter(e=>e.n===n).forEach(e=>{
+sessions++;
+let max=Math.max(...e.s.map(s=>s.kg));
+p.push({v:max,date:w.date});
+e.s.forEach(s=>{
+let e1=s.kg*(1+s.r/30);
+if(!bestSet||e1>bestSet.e1)bestSet={...s,e1};
+});
+});
+});
+
+if(!p.length){
+$('#stats').textContent='Nessun dato.';
+chart($('#chart'),[]);
+return;
+}
+
+$('#stats').innerHTML=
+`Sedute: <b>${sessions}</b> ·
+Carico massimo: <b>${Math.max(...p.map(x=>x.v))} kg</b> ·
+Miglior e1RM: <b>${bestSet.e1.toFixed(1)} kg</b>`;
+
+chart($('#chart'),p);
+};
+
+function renderBody(){
+let key=$('#msel').value||'weight';
+
+let p=D.b.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(b=>({
+v:key==='weight'?b.weight:b.m[key]
+})).filter(x=>x.v!=null);
+
+chart($('#bchart'),p);
+
+$('#bstats').innerHTML=p.length
+?`Prima: <b>${p[0].v}</b> · Ultima: <b>${p.at(-1).v}</b> · Variazione: <b>${(p.at(-1).v-p[0].v).toFixed(1)}</b>`
+:'Nessun dato.';
+
+$('#bhist').innerHTML=D.b.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(b=>`
+<div class="item">
+<b>${b.date.split('-').reverse().join('/')} ${b.weight?b.weight+' kg':''}</b><br>
+<span class="muted">
+${Object.entries(b.m).map(([k,v])=>M[k]+': '+v).join(' · ')}
+</span>
+${b.notes?'<p class="muted">'+b.notes+'</p>':''}
+${b.pics.length?'<div class="photos">'+b.pics.map(x=>`<img src="${x}" alt="Foto progresso">`).join('')+'</div>':''}
+</div>`).join('');
+}
+
+$('#msel').onchange=renderBody;
+
+$('#export').onclick=()=>{
+let a=document.createElement('a');
+let u=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));
+a.href=u;
+a.download='backup-diario-bodybuilding.json';
+a.click();
+setTimeout(()=>URL.revokeObjectURL(u),1000);
+};
+
+render();
+
+if('serviceWorker' in navigator){
+navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+})();
+</script>
+
+</body>
+</html>
